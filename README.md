@@ -1,6 +1,7 @@
 # RAG 知识库问答系统
 
 基于 LangChain + DeepSeek V4 + Chroma 的多格式文档智能问答系统。
+AI-powered document Q&A system based on RAG, LangChain & DeepSeek
 
 ## 功能
 - 支持 PDF、Word、网页文档解析
