@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  rag-app:
+    build: .
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./chroma_db:/app/chroma_db   # 向量库持久化
+      - ./docs:/app/docs             # 文档目录
+    restart: unless-stopped
