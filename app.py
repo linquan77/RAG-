@@ -76,15 +76,28 @@ with st.sidebar:
 
 # 主区域：问答
 st.header("💬 开始提问")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "is_thinking" not in st.session_state:
+    st.session_state.is_thinking = False
+if "pending_query" not in st.session_state:
+    st.session_state.pending_query = None
 
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
-if query := st.chat_input("请输入问题..."):
-    st.session_state.messages.append({"role": "user", "content": query})
-    st.chat_message("user").write(query)
+# 第一次渲染：接收输入，禁用输入框，等待下一次渲染
+if not st.session_state.is_thinking:
+    if query := st.chat_input("请输入问题..."):
+        st.session_state.messages.append({"role": "user", "content": query})
+        st.session_state.pending_query = query
+        st.session_state.is_thinking = True
+        st.rerun()  # 立刻刷新 → 输入框变灰，开始第二次渲染
+else:
+    # 第二次渲染：输入框禁用，执行检索
+    st.chat_input("请输入问题...", disabled=True)
+    query = st.session_state.pending_query
 
     with st.chat_message("assistant"):
         with st.spinner("检索中..."):
@@ -101,7 +114,6 @@ if query := st.chat_input("请输入问题..."):
                     source = doc.metadata.get("source", "未知文件")
                     doc_type = doc.metadata.get("type", "")
 
-                    # Excel 价格表显示行号，其他文档显示页码
                     if doc_type in ["price_table", "price_summary"]:
                         row = doc.metadata.get("row", "?")
                         location = f"第 {row} 行" if doc_type == "price_table" else "商品汇总"
@@ -111,5 +123,10 @@ if query := st.chat_input("请输入问题..."):
 
                     st.markdown(f"**{source}** · {location}")
                     st.caption(doc.page_content[:200] + "...")
+
+    st.session_state.messages.append({"role": "assistant", "content": answer})
+    st.session_state.is_thinking = False
+    st.session_state.pending_query = None
+    st.rerun()
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
