@@ -1,0 +1,14 @@
+.git/
+.gitignore
+.env
+.env.example
+__pycache__/
+*.pyc
+.DS_Store
+models/
+chroma_db/
+*.sqlite3
+.streamlit/
+.venv/
+venv/
+node_modules/

@@ -22,8 +22,10 @@ def load_file(file_path: str):
     else:
         raise ValueError(f"不支持的格式: {ext}")
 
-def ingest(file_path: str, original_name: str = None):
+def ingest(file_path: str, original_name: str = None, progress_callback=None):
     # 1. 加载文档
+    if progress_callback:
+        progress_callback(0.1, "加载文件...")
     docs = load_file(file_path)
 
     #2. 设置 source 元数据为原始文件名（如果提供）或路径
@@ -32,6 +34,8 @@ def ingest(file_path: str, original_name: str = None):
         doc.metadata["source"] = display_name
 
     # 3. 切块
+    if progress_callback:
+        progress_callback(0.3, "分割内容...")
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP
@@ -39,6 +43,8 @@ def ingest(file_path: str, original_name: str = None):
     chunks = splitter.split_documents(docs)
 
     # 4. 存入 Chroma
+    if progress_callback:
+        progress_callback(0.5, "检查重复...")
     vectorstore = Chroma(
         persist_directory=CHROMA_DB_PATH,
         embedding_function=get_embeddings()
@@ -48,7 +54,14 @@ def ingest(file_path: str, original_name: str = None):
     file_name = os.path.basename(file_path)
     existing = vectorstore.get(where={"source": display_name})
     if existing and len(existing["ids"]) > 0:
+        if progress_callback:
+            progress_callback(1.0, "已跳过")
         return 0
 
+    if progress_callback:
+        progress_callback(0.7, "写入数据库...")
     vectorstore.add_documents(chunks)
+    
+    if progress_callback:
+        progress_callback(1.0, "完成！")
     return len(chunks)

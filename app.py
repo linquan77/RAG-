@@ -19,7 +19,15 @@ with st.sidebar:
             accept_multiple_files=True
         )
         if uploaded and st.button("解析入库", type="primary"):
-            for f in uploaded:
+            for idx, f in enumerate(uploaded):
+                st.write(f"📄 处理: {f.name}")
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                def update_progress(progress: float, status: str):
+                    progress_bar.progress(progress)
+                    status_text.text(f"状态: {status}")
+                
                 with tempfile.NamedTemporaryFile(
                     delete=False,
                     suffix=f".{f.name.split('.')[-1]}"
@@ -27,8 +35,8 @@ with st.sidebar:
                     tmp.write(f.read())
                     tmp_path = tmp.name
                     
-                #传入原始文件名
-                count = ingest(tmp_path, original_name=f.name)
+                #传入原始文件名和进度回调
+                count = ingest(tmp_path, original_name=f.name, progress_callback=update_progress)
                 os.unlink(tmp_path)
 
                 if count == 0:
